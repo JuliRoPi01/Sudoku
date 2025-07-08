@@ -12,23 +12,10 @@ sudoku = [
 
 NUMS = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 
-sudoku_boxes = [
-    ["00", "01", "02", "10", "11", "12", "20", "21", "22"],
-    ["03", "04", "05", "13", "14", "15", "23", "24", "25"],
-    ["06", "07", "08", "16", "17", "18", "26", "27", "28"],
-    ["30", "31", "32", "40", "41", "42", "50", "51", "52"],
-    ["33", "34", "35", "43", "44", "45", "53", "54", "55"],
-    ["36", "37", "38", "46", "47", "48", "56", "57", "58"],
-    ["60", "61", "62", "70", "71", "72", "80", "81", "82"],
-    ["63", "64", "65", "73", "74", "75", "83", "84", "85"],
-    ["66", "67", "68", "76", "77", "78", "86", "87", "88"]
-]
-
 def sudoku_solver() -> None:
     cols_nums: dict = get_cols_nums()
     rows_nums: dict = get_rows_nums()
     boxes_nums: dict = get_boxes_nums()
-
     possible_nums = dict()
     for row in range(9):
         for col in range(9):
@@ -45,13 +32,17 @@ def sudoku_solver() -> None:
                 used_nums: set = row_nums | col_nums | box_nums
                 cell_nums: list = list(NUMS - used_nums)
                 if len(cell_nums) == 1:
-                    sudoku[row][col] = cell_nums[0]
+                    num = cell_nums[0]
+                    sudoku[row][col] = num
+                    row_nums |= {num}
+                    col_nums |= {num}
+                    box_nums |= {num}
                 else:
                     possible_nums[ubication] = cell_nums
 
-                
     print(possible_nums)
-    print(sudoku)
+    for row in sudoku:
+        print(row)
 
 def get_rows_nums() -> dict:
     row_nums = dict()
