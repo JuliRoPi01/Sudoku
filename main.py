@@ -17,7 +17,7 @@ def sudoku_solver() -> None:
                 if sudoku[row][col] == 0:
                     cell = f"{row}{col}"
                     row_nums: set = rows_nums[row]["init"]
-                    col_nums: set = cols_nums[col]
+                    col_nums: set = cols_nums[col]["init"]
                     box: str = get_cell_box(cell, boxes_nums)
                     box_nums: set = boxes_nums[box]
                     used_nums: set = row_nums | col_nums | box_nums
@@ -27,27 +27,26 @@ def sudoku_solver() -> None:
                         add_num_to_sudoku(num, row, col, box, rows_nums, cols_nums, boxes_nums)
                     else:
                         for num in cell_nums:
+                            if cell not in cols_nums[col]["notinit"][num]:
+                                cols_nums[col]["notinit"][num].append(cell)
                             if cell not in not_row_nums[num]:
                                 not_row_nums[num].append(cell)
             
-            not_row_nums_copy: dict = deepcopy(not_row_nums)
-            for key_num in not_row_nums_copy.keys():
-                if len(not_row_nums_copy[key_num]) == 1:
-                    cell: str = list(not_row_nums_copy[key_num])[0]
-                    num: int = key_num
-                    row: int = int(cell[0])
-                    col: int = int(cell[1])
-                    box = get_cell_box(cell, boxes_nums)
-                    add_num_to_sudoku(num, row, col, box, rows_nums, cols_nums, boxes_nums)
+            add_inidividual_numbers(not_row_nums, rows_nums, cols_nums, boxes_nums)
+
+        for i in range(9):
+            not_cols_nums: dict = cols_nums[i]["notinit"]
+            add_inidividual_numbers(not_cols_nums, rows_nums, cols_nums, boxes_nums)
 
         if sudoku == sudoku_solving:
             tries += 1
         else:
             tries = 0
-        empty_nums_not_in_row(rows_nums)
+        empty_nums_notinit(rows_nums, cols_nums)
         sudoku_solving = deepcopy(sudoku)
     
     print(rows_nums)
+    print(cols_nums)
     for r in sudoku:
         print(r)
 
@@ -67,12 +66,15 @@ def get_rows_nums() -> dict:
 def get_cols_nums() -> dict:
     col_nums = dict()
     for col in range(9):
-        nums: set = set()
+        nums_in_col: set = set()
         for  row in range(9):
             num: int = sudoku[row][col]
             if num != 0:
-                nums.add(num)
-        col_nums[col] = nums
+                nums_in_col.add(num)
+        not_in_col = NUMS - nums_in_col
+        nums_not_in_col: dict = {num:[] for num in not_in_col}
+
+        col_nums[col] = {"init":nums_in_col, "notinit":nums_not_in_col}
     return col_nums
 
 def get_boxes_nums() -> dict:
@@ -107,15 +109,29 @@ def get_cell_box(cell: str, boxes_nums: dict) -> str:
 def add_num_to_sudoku(num: int, row: int, col: int, box: str, rows_nums: dict, cols_nums: dict, boxes_nums: dict) -> None:
     sudoku[row][col] = num
     rows_nums[row]["init"].add(num)
-    cols_nums[col].add(num)
+    cols_nums[col]["init"].add(num)
     boxes_nums[box].add(num)
     del rows_nums[row]["notinit"][num]
+    del cols_nums[col]["notinit"][num]
     cell = f"{row}{col}"
 
-def empty_nums_not_in_row(rows_nums) -> None:
-    for r in range(9):
-        for key in rows_nums[r]["notinit"].keys():
-            rows_nums[r]["notinit"][key] = []
+def add_inidividual_numbers(notinit_dict: dict, rows_nums, cols_nums, boxes_nums) -> None:
+    notinit_dict_copy: dict = deepcopy(notinit_dict)
+    for key_num in notinit_dict_copy.keys():
+        if len(notinit_dict_copy[key_num]) == 1:
+            cell: str = list(notinit_dict_copy[key_num])[0]
+            num: int = key_num
+            row: int = int(cell[0])
+            col: int = int(cell[1])
+            box = get_cell_box(cell, boxes_nums)
+            add_num_to_sudoku(num, row, col, box, rows_nums, cols_nums, boxes_nums)
+
+def empty_nums_notinit(rows_nums, cols_nums) -> None:
+    for i in range(9):
+        for key_r in rows_nums[i]["notinit"].keys():
+            rows_nums[i]["notinit"][key_r] = []
+        for key_c in cols_nums[i]["notinit"].keys():
+            cols_nums[i]["notinit"][key_c] = []
 
 if __name__ == "__main__":
     sudoku_solver()
