@@ -69,30 +69,41 @@ def sudoku_solver(sudoku) -> list[list[int]]:
             row += 3  
             col = 0
         return boxes_givens
+    
 
-    #solving techniques
-    def solve_singles(sudoku: list[list[int]]) -> list[list[int]]:
-        #functions
-        def get_cell_box(cell: str) -> str:
+    #functions
+    def get_cell_box(cell: str) -> str:
             box: str = "none"
             for key in boxes_givens.keys():
                 if cell in key:
                     box = key
                     break
             return box
+    
+    def add_value_to_sudoku(value: int, row: int, col: int, box: str) -> None:
+            sudoku[row][col] = value
+            rows_givens[row].add(value)
+            cols_givens[col].add(value)
+            boxes_givens[box].add(value)
 
-        def add_value_to_sudoku(num: int, row: int, col: int, box: str) -> None:
-            sudoku[row][col] = num
-            rows_givens[row].add(num)
-            cols_givens[col].add(num)
-            boxes_givens[box].add(num)
-            del possible_values["rows"][row][num]
-            del possible_values["columns"][col][num]
-            del possible_values["boxes"][box][num]
-            cell = f"{row}{col}"
-            if cell in possible_values["cells"]:
-                del possible_values["cells"][f"{row}{col}"]
+    def delete_value_from_possible_values(value: int, row: int, col: int, box: str) -> None:
+        del possible_values["rows"][row][value]
+        del possible_values["columns"][col][value]
+        del possible_values["boxes"][box][value]
+        cell = f"{row}{col}"
+        if cell in possible_values["cells"]:
+            del possible_values["cells"][f"{row}{col}"]
 
+    def remove_value_from_sudoku(value: int, row: int, col: int, box: str) -> None:
+        sudoku[row][col] = 0
+        rows_givens[row].remove(value)
+        cols_givens[col].remove(value)
+        boxes_givens[box].remove(value)
+
+
+    #solving techniques
+    def solve_singles() -> None:
+        #functions
         def add_single_numbers(dict_possible_values: dict) -> None:
             dict_possible_values_copy: dict = deepcopy(dict_possible_values)
             for key_num in dict_possible_values_copy.keys():
@@ -103,6 +114,7 @@ def sudoku_solver(sudoku) -> list[list[int]]:
                     col: int = int(cell[1])
                     box = get_cell_box(cell)
                     add_value_to_sudoku(num, row, col, box)
+                    delete_value_from_possible_values(num, row, col, box)
 
         def empty_nums_notgiven() -> None:
             for key in ("rows", "columns"):
@@ -134,6 +146,7 @@ def sudoku_solver(sudoku) -> list[list[int]]:
                         if len(cell_nums) == 1:
                             num = cell_nums[0]
                             add_value_to_sudoku(num, row, col, box)
+                            delete_value_from_possible_values(num, row, col, box)
                         else:
                             possible_values["cells"][cell] = cell_nums
 
@@ -166,8 +179,27 @@ def sudoku_solver(sudoku) -> list[list[int]]:
                 tries = 0
             empty_nums_notgiven()
             sudoku_solving_singles = deepcopy(sudoku)
+
+    
+    def backtracking_solves(index:int) -> bool:
+        if index >= len(cells):
+            return True
         
-        return sudoku
+        cell: str = cells[index]
+        cell_values: list = possible_cell_values[cell]
+        
+        row: int = int(cell[0])
+        col: int = int(cell[1])
+        box: str = get_cell_box(cell)
+        for value in cell_values:
+            if value not in rows_givens[row] and value not in cols_givens[col] and value not in boxes_givens[box]:
+                add_value_to_sudoku(value, row, col, box)
+                
+                if backtracking_solves(index+1):
+                    return True
+
+                remove_value_from_sudoku(value, row, col, box)
+        return False
 
 
     possible_values: dict = {"rows":{}, "columns":{}, "boxes":{}, "cells":{}}
@@ -175,7 +207,12 @@ def sudoku_solver(sudoku) -> list[list[int]]:
     rows_givens: dict = get_rows_givens()
     boxes_givens: dict = get_boxes_givens()
 
-    sudoku = solve_singles(sudoku)
+    solve_singles()
+
+    possible_cell_values = possible_values["cells"]
+    if len(possible_cell_values) > 0:
+        cells = list(possible_cell_values.keys())
+        backtracking_solves(0)
     return sudoku
 
 
