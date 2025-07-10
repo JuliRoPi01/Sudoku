@@ -1,18 +1,84 @@
 from copy import deepcopy
+from random import shuffle, randint, choice
 from sudokus import sudokus
 
 NUMS: set = {1, 2, 3, 4, 5, 6, 7, 8, 9}
+LEVELS: dict = {
+    "easy":(37,41),
+    "medium":(32,36),
+    "hard":(27,31),
+    "extreme":(22,26),
+    "evil":(17,21)
+}
 
 def main() -> None:
-    for s in range(len(sudokus)):
-        print(f"sudoku #{s}")
-        sudoku = sudokus[s]
-        sudoku_solved = sudoku_solver(sudoku)
-        for row in sudoku_solved:
-            print(row)
+    while True:
+        action = input("Generate or solve sudoku (g-s): ")
+        if action == "s":
+            for s in range(len(sudokus)):
+                print(f"sudoku #{s}")
+                sudoku = sudokus[s]
+                sudoku_s = sudoku_solver(sudoku)
+                for r in sudoku_s:
+                    print(r)
+            break
+        elif action == "g":
+            sudoku_s = sudoku_generator()
+            for r in sudoku_s:
+                print(r)
+            break
 
+def sudoku_generator() -> list[list[int]]:
+    def is_solvable(sudoku) -> bool:
+        sudoku_test = deepcopy(sudoku)
+        sudoku_solver(sudoku_test)
+        for row in sudoku_test:
+            if 0 in row:
+                return False
+        return True
+    
+    while True:
+        new_sudoku = [
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0]
+        ]
+        cells = [
+            '00','01','02','03','04','05','06','07','08',
+            '10','11','12','13','14','15','16','17','18',
+            '20','21','22','23','24','25','26','27','28',
+            '30','31','32','33','34','35','36','37','38',
+            '40','41','42','43','44','45','46','47','48',
+            '50','51','52','53','54','55','56','57','58',
+            '60','61','62','63','64','65','66','67','68',
+            '70','71','72','73','74','75','76','77','78',
+            '80','81','82','83','84','85','86','87','88']
+        sudoku_solver(new_sudoku, new_sudoku=True)
+        while True:
+            usr_difficulty = input("Enter a difficulty (easy, medium, difficult, extreme, evil): ")
+            if usr_difficulty in LEVELS.keys():
+                min_givens = LEVELS[usr_difficulty][0]
+                max_givens = LEVELS[usr_difficulty][1]
+                break
+        givens: int = randint(min_givens, max_givens)
+        while len(cells) > givens:
+            cell_choice: str = choice(cells)
+            cells.remove(cell_choice)
+            row: int = int(cell_choice[0])
+            col: int = int(cell_choice[1])
+            new_sudoku[row][col] = 0
 
-def sudoku_solver(sudoku) -> list[list[int]]:
+        if is_solvable(new_sudoku):
+            break
+    return new_sudoku
+
+def sudoku_solver(sudoku, new_sudoku=False) -> list[list[int]]:
     #sudoku houses
     def get_rows_givens() -> dict:
         row_nums: dict = dict()
@@ -187,6 +253,8 @@ def sudoku_solver(sudoku) -> list[list[int]]:
         
         cell: str = cells[index]
         cell_values: list = possible_cell_values[cell]
+        if new_sudoku:
+            shuffle(cell_values)
         
         row: int = int(cell[0])
         col: int = int(cell[1])
